@@ -1,0 +1,113 @@
+---
+title: 'Task 1: Spatial Data Visualization'
+author: "Katheryn Moya"
+date: "3/13/2023"
+output: 
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: cosmo
+    code_folding: show
+    collapsed: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(broom)
+
+## spatial data packages
+
+library(sf) #simple features
+library(tmap)
+library(terra)
+```
+
+## Task Instructions:
+
+
+- For this task, read in the spatial data, and create a professionally formatted and prepared HTML (showing all of your code directly or making it available with code-folding) from an .Rmd in which you: 
+
+  - Make an exploratory interactive map in tmap showing the location of oil spill events included in the data.
+  
+  - Make a finalized static choropleth map in ggplot in which the fill color for each county depends on the count of inland oil spill events by county for the 2008 oil spill data
+  
+
+## Overview:
+
+*Data Citation:*
+
+### Data Wrangling
+```{r}
+# read in oil spill dataframe
+
+oil_spill_df <- read_csv(here("data", "Oil_Spill_Incident_Tracking.csv")) %>% 
+  janitor::clean_names()
+
+# Read in CA county outlines
+
+ca_counties_sf <- read_sf(here("data", "ca_counties", "CA_Counties_TIGER2016.shp")) %>%  # a way to read in vector data to create a simple features object
+  janitor::clean_names() %>%  # gets rid of capitals
+  select(county_name = name, land_area = aland)
+
+```
+
+```{r}
+
+# determine county sf crs
+ca_counties_crs <- st_crs(ca_counties_sf) 
+
+ca_counties_crs #3857
+
+#convert oil spill df to sf
+
+oil_spill_sf <- oil_spill_df %>% 
+  drop_na(latitude, longitude) %>% 
+  st_as_sf(coords = c("x", "y"), crs = ca_counties_crs)
+```
+
+
+## Exploratory Interactive Map of Oil Spill Events in 2008
+
+```{r}
+tmap_mode("view")
+
+  tm_shape(ca_counties_sf) +
+  tm_borders() +
+  tm_shape(oil_spill_sf) +
+  tm_dots(col = "specificlo") +
+  tm_layout(legend.outside = TRUE) +
+  tm_layout(title = "California Oil Spill Events in 2008", title.size = 1.5) +
+  tm_minimap()
+    
+```
+
+## Static Choropleth Map of Inland Oil Spill Counts in ggplot
+
+```{r}
+# wrangle oil spill data
+
+oil_spill_subset <- oil_spill_df %>% 
+  filter(inlandmari == "Inland")
+
+# spatially join county and oil spill data
+
+ca_spill_sf<- ca_counties_sf %>% 
+  st_join(oil_spill_sf)
+
+spill_counts_sf <- ca_spill_sf %>% 
+  filter(inlandmari == "Inland") %>% 
+  group_by(county_name) %>% 
+  summarize(n_spills = n())
+
+## Plot the results
+
+ggplot(data = spill_counts_sf )  + 
+  geom_sf(aes(fill = n_spills), 
+          color = "grey30", 
+          size = 0.1) +
+  scale_fill_gradientn(colors = c("lightgrey", "orange", "red"))
+```
+
