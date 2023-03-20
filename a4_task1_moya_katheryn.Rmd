@@ -1,8 +1,7 @@
 ---
-title: 'Task 1: Spatial Data Visualization'
+title: 'Task 1: California Oil Spill Incident Visualization'
 author: "Katheryn Moya"
 date: "3/13/2023"
-output: 
 output: 
   html_document:
     toc: yes
@@ -12,8 +11,8 @@ output:
     collapsed: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(tidyverse)
 library(here)
 library(broom)
@@ -25,21 +24,14 @@ library(tmap)
 library(terra)
 ```
 
-## Task Instructions:
-
-
-- For this task, read in the spatial data, and create a professionally formatted and prepared HTML (showing all of your code directly or making it available with code-folding) from an .Rmd in which you: 
-
-  - Make an exploratory interactive map in tmap showing the location of oil spill events included in the data.
-  
-  - Make a finalized static choropleth map in ggplot in which the fill color for each county depends on the count of inland oil spill events by county for the 2008 oil spill data
-  
 
 ## Overview:
 
-*Data Citation:*
+Using data provided by the Office of Spill Prevention and Response (OSPR) database, reported incidents of oil spills in California during the year 2008 was visualized. First, every 2008 oil spill location was mapped on an interactive map with CA county borders. The second part of the analysis includes a choropleth map was created to visualize which counties had the highest number of inland oil spill incidents in 2008.
 
-### Data Wrangling
+*Data Citation:* Lampinen, Mark (2020). Oil Spill Incident Tracking [ds394]. California Department of Fish and Game, Office of Spill Prevention and Response. https://gis.data.ca.gov/datasets/CDFW::oil-spill-incident-tracking-ds394-1/about
+
+
 ```{r}
 # read in oil spill dataframe
 
@@ -59,7 +51,7 @@ ca_counties_sf <- read_sf(here("data", "ca_counties", "CA_Counties_TIGER2016.shp
 # determine county sf crs
 ca_counties_crs <- st_crs(ca_counties_sf) 
 
-ca_counties_crs #3857
+ # ca_counties_crs #3857
 
 #convert oil spill df to sf
 
@@ -83,6 +75,10 @@ tmap_mode("view")
   tm_minimap()
     
 ```
+
+
+**Figure 1.** Reported oil spill incidents in California in 2008. The user can click on the point to obtain more information on each event.
+
 
 ## Static Choropleth Map of Inland Oil Spill Counts in ggplot
 
@@ -108,6 +104,8 @@ ggplot(data = spill_counts_sf )  +
   geom_sf(aes(fill = n_spills), 
           color = "grey30", 
           size = 0.1) +
-  scale_fill_gradientn(colors = c("lightgrey", "orange", "red"))
+  scale_fill_gradientn(colors = c("lightblue1", "darkslategray4", "darkslategrey")) +
+  labs(fill = "Number of Inland Oil Spills")
 ```
 
+**Figure 2.** California oil spills that occurred inland in 2008 by county. Counties with darker blues depict a greater number of spills compared to the rest of the state. 
